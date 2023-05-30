@@ -70,30 +70,16 @@ namespace Patcher
         public void Collect(string rootFolder, string fileName, int step)
         {
             var fullPath = Path.Combine(rootFolder, fileName);
-            var stream = File.OpenRead(fullPath);
-            var size = new FileInfo(fullPath).Length;
+            var searcher = new HeaderSeacher(fullPath);
 
-            int fastCheckSum = 0;
-            Queue<byte> byteQueue = new Queue<byte>();
-            for (int j = 0; j < Constants.HeaderSize; j++)
+            do
             {
-                var b = (byte)stream.ReadByte();
-                byteQueue.Enqueue(b);
-                fastCheckSum += b;
-            }
-
-            while (stream.Position < size)
-            {
-                fastCheckSum -= byteQueue.Dequeue();
-                var b = (byte)stream.ReadByte();
-                fastCheckSum += b;
-                byteQueue.Enqueue(b);
-
-                if (stream.Position % step == 0)
+                if (searcher.Position % step == 0)
                 {
-                    Add(new Header(byteQueue.ToArray(), fastCheckSum, stream.Position, fileName));
+                    Add(new Header(fileName, searcher.Position, searcher.GetBytes(), searcher.FastCheckSum));
                 }
             }
+            while (searcher.MoveNext());
         }
     }
 }

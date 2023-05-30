@@ -3,36 +3,36 @@ namespace Patcher
 {
     public class Header
     {
+        public string FilePath;
+        public long StartPosition;
         public byte[] Bytes;
         public int FastChecksum;
-        public long StartPosition;
-        public string FilePath;
 
-        public Header(byte[] bytes, int fastChecksum, long startPosition, string filePath)
+        public Header(string filePath, long startPosition, byte[] bytes, int fastChecksum )
         {
+            this.FilePath = filePath;
+            this.StartPosition = startPosition;
             this.Bytes = bytes;
             this.FastChecksum = fastChecksum;
-            this.StartPosition = startPosition;
-            this.FilePath = filePath;
         }
 
         public void Save(BinaryWriter writer)
         {
+            writer.Write(FilePath);
+            writer.Write(StartPosition);
             writer.Write(Bytes.Length);
             writer.Write(Bytes);
             writer.Write(FastChecksum);
-            writer.Write(StartPosition);
-            writer.Write(FilePath);
         }
 
         public static Header Load(BinaryReader reader)
         {
+            var path = reader.ReadString();
+            var position = reader.ReadInt64();
             var count = reader.ReadInt32();
             var bytes = reader.ReadBytes(count);
             var fastChecksum = reader.ReadInt32();
-            var position = reader.ReadInt64();
-            var path = reader.ReadString();
-            return new Header(bytes, fastChecksum, position, path);
+            return new Header(path, position, bytes, fastChecksum );
         }
     }
 }

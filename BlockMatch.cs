@@ -11,7 +11,7 @@ namespace Patcher
             this.SrcFile = srcFile;
         }
 
-        public long DstEndPosition { get => DstPosition + Length; }
+        public long DstEndPosition => DstPosition + Length;
 
         public long DstPosition;
         public long SrcPosition;
