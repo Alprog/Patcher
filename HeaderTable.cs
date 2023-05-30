@@ -6,10 +6,10 @@ namespace Patcher
     {
         public static string HeaderTableFilePath = "C:/patcher/data/haaderTable.txt";
 
-        public List<BlockHeader> Headers = new List<BlockHeader>();
-        public Dictionary<int, List<BlockHeader>> Map = new Dictionary<int, List<BlockHeader>>();
+        public List<Header> Headers = new List<Header>();
+        public Dictionary<int, List<Header>> Map = new Dictionary<int, List<Header>>();
 
-        public void Add(BlockHeader header)
+        public void Add(Header header)
         {
             Headers.Add(header);
         }
@@ -32,16 +32,16 @@ namespace Patcher
             var binaryReader = new BinaryReader(fileStream);
             while (fileStream.Position < size)
             {
-                Add(BlockHeader.Load(binaryReader));
+                Add(Header.Load(binaryReader));
             }
             fileStream.Close();
 
             foreach (var header in Headers)
             {
-                List<BlockHeader> list;
+                List<Header> list;
                 if (!Map.TryGetValue(header.FastChecksum, out list))
                 {
-                    list = new List<BlockHeader>();
+                    list = new List<Header>();
                     Map[header.FastChecksum] = list;
                 }
                 list.Add(header);
@@ -85,7 +85,7 @@ namespace Patcher
 
                 if (stream.Position % step == 0)
                 {
-                    Add(new BlockHeader(byteQueue.ToArray(), fastCheckSum, stream.Position, fileName));
+                    Add(new Header(byteQueue.ToArray(), fastCheckSum, stream.Position, fileName));
                 }
             }
         }

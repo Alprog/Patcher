@@ -1,7 +1,4 @@
 ﻿
-using System.Collections.Generic;
-using System.IO;
-
 namespace Patcher
 {
     public class ChecksumTable
@@ -19,16 +16,16 @@ namespace Patcher
 
         public static void Create(string folder, string tablePath)
         {
-            var steamTable = new ChecksumTable();
+            var table = new ChecksumTable();
             var steamList = FileSystem.ListFiles(folder);
             int i = 0;
             foreach (var fileName in steamList)
             {
                 var hash = FileSystem.CalcMD5(Path.Combine(folder, fileName));
-                steamTable.Add(fileName, hash);
+                table.Add(fileName, hash);
                 Console.WriteLine(i++);
             }
-            steamTable.Save(tablePath);
+            table.Save(tablePath);
         }        
 
         public void Add(string path, string hash) 

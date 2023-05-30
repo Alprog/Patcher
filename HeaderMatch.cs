@@ -3,13 +3,13 @@ namespace Patcher
 {
     public class HeaderMatch
     {
-        public HeaderMatch(long position, BlockHeader blockStart)
+        public HeaderMatch(long position, BlockHeader header)
         {
             this.Position = position;
-            this.BlockStart = blockStart;
+            this.Header = header;
         }
 
         public long Position;
-        public BlockHeader BlockStart;
+        public BlockHeader Header;
     }
 }

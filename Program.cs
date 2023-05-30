@@ -58,7 +58,7 @@ namespace Patcher
 
                 if (stream.Position > hiden)
                 {
-                    if (info.Map.TryGetValue(fastCheckSum, out List<BlockHeader> list))
+                    if (info.Map.TryGetValue(fastCheckSum, out List<Header> list))
                     {
                         var curBytes = byteQueue.ToArray();                        
                         foreach (var blockStart in list)
@@ -76,7 +76,7 @@ namespace Patcher
 
             Console.WriteLine("Matches: " + matches.Count);
 
-            var matchBlocks = new List<MatchBlock>();
+            var matchBlocks = new List<BlockMatch>();
 
             long last = 0;
             foreach (var match in matches)
@@ -88,8 +88,8 @@ namespace Patcher
 
                 stream.Position = match.Position;
 
-                var otherStream = File.OpenRead(Path.Combine(SteamFolder, match.BlockStart.FilePath));
-                otherStream.Position = match.BlockStart.StartPosition;
+                var otherStream = File.OpenRead(Path.Combine(SteamFolder, match.Header.FilePath));
+                otherStream.Position = match.Header.StartPosition;
 
                 int i = 0;
                 while (stream.ReadByte() == otherStream.ReadByte())
@@ -102,10 +102,10 @@ namespace Patcher
                 }
 
                 var dstStartOffset = match.Position - 1024;
-                var srcStartOffst = match.BlockStart.StartPosition - 1024;
+                var srcStartOffst = match.Header.StartPosition - 1024;
                 var length = (i + 1024);
 
-                var block = new MatchBlock(dstStartOffset, srcStartOffst, length, match.BlockStart.FilePath);
+                var block = new BlockMatch(dstStartOffset, srcStartOffst, length, match.Header.FilePath);
                 last = Math.Max(last, block.DstEndPosition);
                 matchBlocks.Add(block);
 
