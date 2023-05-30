@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using System.Security.Cryptography;
 
 namespace Patcher
 {
-    public class FileSystem
+    public static class FileSystem
     {
-        public List<string> List(string folder)
+        public static List<string> ListFiles(string folder)
         {
             int startLength = folder.Length;
             var list = new List<string>();
@@ -17,6 +14,18 @@ namespace Patcher
                 list.Add(filePath.Substring(startLength + 1));
             }
             return list;
+        }
+
+        public static string CalcMD5(string filename)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(filename))
+                {
+                    var hash = md5.ComputeHash(stream);
+                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                }
+            }
         }
     }
 }

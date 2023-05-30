@@ -5,11 +5,11 @@ namespace Patcher
 {
     public class Program
     {
-        static string SteamFolder = "C:\\Steam\\steamapps\\common\\Encased";
-        static string PatchFolder = "C:\\Users\\alpro\\Downloads\\v1.4.713.1655";
+        static string SteamFolder = "C:/Steam/steamapps/common/Encased";
+        static string PatchFolder = "C:/Users/alpro/Downloads/v1.4.713.1655";
 
-        static string SteamHashTable = "C:\\patcher\\steam.txt";
-        static string PatchHashTable = "C:\\patcher\\patch.txt";
+        static string SteamHashTable = "C:/patcher/data/steam.txt";
+        static string PatchHashTable = "C:/patcher/data/patch.txt";
 
         //static string SubPath = "Encased_Data\\StreamingAssets\\Master.bank";
         //static string SubPath = "Encased_Data\\StreamingAssets\\AssetBundles\\misc";
@@ -24,7 +24,7 @@ namespace Patcher
             //info.Collect(SteamFolder, mb / 16);
             //info.Save();
 
-            var info = new BlockInfo();
+            var info = new HeaderTable();
             info.Load();
 
             ProcessFile(Path.Combine(PatchFolder, SubPath), info);
@@ -32,7 +32,7 @@ namespace Patcher
 
 
 
-        static public void ProcessFile(string fullPath, BlockInfo info)
+        static public void ProcessFile(string fullPath, HeaderTable info)
         {
             var stream = File.OpenRead(fullPath);
             long size = new FileInfo(fullPath).Length;
@@ -46,7 +46,7 @@ namespace Patcher
                 fastCheckSum += b;
             }
 
-            var matches = new List<Match>();
+            var matches = new List<HeaderMatch>();
 
             long hiden = 0;
             while (stream.Position < size)
@@ -58,14 +58,14 @@ namespace Patcher
 
                 if (stream.Position > hiden)
                 {
-                    if (info.Dict.TryGetValue(fastCheckSum, out List<BlockStart> list))
+                    if (info.Map.TryGetValue(fastCheckSum, out List<BlockHeader> list))
                     {
                         var curBytes = byteQueue.ToArray();                        
                         foreach (var blockStart in list)
                         {
                             if (curBytes.SequenceEqual(blockStart.Bytes))
                             {
-                                matches.Add(new Match(stream.Position, blockStart));
+                                matches.Add(new HeaderMatch(stream.Position, blockStart));
                                 hiden = stream.Position + 10 * 1024;
                             }
                         }
@@ -88,8 +88,8 @@ namespace Patcher
 
                 stream.Position = match.Position;
 
-                var otherStream = File.OpenRead(Path.Combine(SteamFolder, match.BlockStart.Path));
-                otherStream.Position = match.BlockStart.Position;
+                var otherStream = File.OpenRead(Path.Combine(SteamFolder, match.BlockStart.FilePath));
+                otherStream.Position = match.BlockStart.StartPosition;
 
                 int i = 0;
                 while (stream.ReadByte() == otherStream.ReadByte())
@@ -102,10 +102,10 @@ namespace Patcher
                 }
 
                 var dstStartOffset = match.Position - 1024;
-                var srcStartOffst = match.BlockStart.Position - 1024;
+                var srcStartOffst = match.BlockStart.StartPosition - 1024;
                 var length = (i + 1024);
 
-                var block = new MatchBlock(dstStartOffset, srcStartOffst, length, match.BlockStart.Path);
+                var block = new MatchBlock(dstStartOffset, srcStartOffst, length, match.BlockStart.FilePath);
                 last = Math.Max(last, block.DstEndPosition);
                 matchBlocks.Add(block);
 

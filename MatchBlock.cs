@@ -1,18 +1,6 @@
 ﻿
 namespace Patcher
 {
-    public class Match
-    {
-        public Match(long position, BlockStart blockStart)
-        {
-            this.Position = position;
-            this.BlockStart = blockStart;
-        }
-
-        public long Position;
-        public BlockStart BlockStart;
-    }
-
     public class MatchBlock
     {
         public MatchBlock(long dstPosition, long srcPosition, long length, string srcFile)

@@ -19,13 +19,12 @@ namespace Patcher
 
         public static void Create(string folder, string tablePath)
         {
-            var fs = new FileSystem();
             var steamTable = new ChecksumTable();
-            var steamList = fs.List(folder);
+            var steamList = FileSystem.ListFiles(folder);
             int i = 0;
             foreach (var fileName in steamList)
             {
-                var hash = Checksumer.CalcMD5(Path.Combine(folder, fileName));
+                var hash = FileSystem.CalcMD5(Path.Combine(folder, fileName));
                 steamTable.Add(fileName, hash);
                 Console.WriteLine(i++);
             }

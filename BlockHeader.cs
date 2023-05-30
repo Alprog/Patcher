@@ -1,19 +1,19 @@
 ﻿
 namespace Patcher
 {
-    public class BlockStart
+    public class BlockHeader
     {
         public byte[] Bytes;
         public int FastChecksum;
-        public long Position;
-        public string Path;
+        public long StartPosition;
+        public string FilePath;
 
-        public BlockStart(byte[] bytes, int fastChecksum, long position, string path)
+        public BlockHeader(byte[] bytes, int fastChecksum, long startPosition, string filePath)
         {
             this.Bytes = bytes;
             this.FastChecksum = fastChecksum;
-            this.Position = position;
-            this.Path = path;
+            this.StartPosition = startPosition;
+            this.FilePath = filePath;
         }
 
         public void Save(BinaryWriter writer)
@@ -21,18 +21,18 @@ namespace Patcher
             writer.Write(Bytes.Length);
             writer.Write(Bytes);
             writer.Write(FastChecksum);
-            writer.Write(Position);
-            writer.Write(Path);
+            writer.Write(StartPosition);
+            writer.Write(FilePath);
         }
 
-        public static BlockStart Load(BinaryReader reader)
+        public static BlockHeader Load(BinaryReader reader)
         {
             var count = reader.ReadInt32();
             var bytes = reader.ReadBytes(count);
             var fastChecksum = reader.ReadInt32();
             var position = reader.ReadInt64();
             var path = reader.ReadString();
-            return new BlockStart(bytes, fastChecksum, position, path);
+            return new BlockHeader(bytes, fastChecksum, position, path);
         }
     }
 }

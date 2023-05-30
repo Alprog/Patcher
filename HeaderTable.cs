@@ -2,55 +2,55 @@
 
 namespace Patcher
 {
-    public class BlockInfo
+    public class HeaderTable
     {
-        public static string BlockInfoFilepath = "C:\\Users\\alpro\\source\\repos\\ConsoleApp1\\ConsoleApp1\\blockInfo.txt";
+        public static string HeaderTableFilePath = "C:/patcher/data/haaderTable.txt";
 
-        public List<BlockStart> BlockStarts = new List<BlockStart>();
-        public Dictionary<int, List<BlockStart>> Dict = new Dictionary<int, List<BlockStart>>();
+        public List<BlockHeader> Headers = new List<BlockHeader>();
+        public Dictionary<int, List<BlockHeader>> Map = new Dictionary<int, List<BlockHeader>>();
 
-        public void Add(BlockStart blockStart)
+        public void Add(BlockHeader header)
         {
-            BlockStarts.Add(blockStart);
+            Headers.Add(header);
         }
 
         public void Save()
         {
-            var fileStream = File.OpenWrite(BlockInfoFilepath);
+            var fileStream = File.OpenWrite(HeaderTableFilePath);
             var binaryWriter = new BinaryWriter(fileStream);
-            foreach (var blockStart in BlockStarts) 
+            foreach (var header in Headers) 
             {
-                blockStart.Save(binaryWriter);
+                header.Save(binaryWriter);
             }
             fileStream.Close();
         }
 
         public void Load()
         {
-            var fileStream = File.OpenRead(BlockInfoFilepath);
-            var size = new FileInfo(BlockInfoFilepath).Length;
+            var fileStream = File.OpenRead(HeaderTableFilePath);
+            var size = new FileInfo(HeaderTableFilePath).Length;
             var binaryReader = new BinaryReader(fileStream);
             while (fileStream.Position < size)
             {
-                Add(BlockStart.Load(binaryReader));
+                Add(BlockHeader.Load(binaryReader));
             }
             fileStream.Close();
 
-            foreach (var blockStart in BlockStarts)
+            foreach (var header in Headers)
             {
-                List<BlockStart> list;
-                if (!Dict.TryGetValue(blockStart.FastChecksum, out list))
+                List<BlockHeader> list;
+                if (!Map.TryGetValue(header.FastChecksum, out list))
                 {
-                    list = new List<BlockStart>();
-                    Dict[blockStart.FastChecksum] = list;
+                    list = new List<BlockHeader>();
+                    Map[header.FastChecksum] = list;
                 }
-                list.Add(blockStart);
+                list.Add(header);
             }
         }
 
         public void Collect(string rootFolder, int step)
         {
-            var fileNames = new FileSystem().List(rootFolder);
+            var fileNames = FileSystem.ListFiles(rootFolder);
             Console.WriteLine(fileNames.Count);
 
             int i = 0;
@@ -85,7 +85,7 @@ namespace Patcher
 
                 if (stream.Position % step == 0)
                 {
-                    Add(new BlockStart(byteQueue.ToArray(), fastCheckSum, stream.Position, fileName));
+                    Add(new BlockHeader(byteQueue.ToArray(), fastCheckSum, stream.Position, fileName));
                 }
             }
         }
