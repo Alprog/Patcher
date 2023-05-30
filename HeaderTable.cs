@@ -4,19 +4,25 @@ namespace Patcher
 {
     public class HeaderTable
     {
-        public static string HeaderTableFilePath = "C:/patcher/data/haaderTable.txt";
-
         public List<Header> Headers = new List<Header>();
         public Dictionary<int, List<Header>> Map = new Dictionary<int, List<Header>>();
+
+        public HeaderTable(string filePath = null)
+        {
+            if (filePath != null)
+            {
+                Load(filePath);
+            }
+        }
 
         public void Add(Header header)
         {
             Headers.Add(header);
         }
 
-        public void Save()
+        public void Save(string filePath)
         {
-            var fileStream = File.OpenWrite(HeaderTableFilePath);
+            var fileStream = File.OpenWrite(filePath);
             var binaryWriter = new BinaryWriter(fileStream);
             foreach (var header in Headers) 
             {
@@ -25,10 +31,10 @@ namespace Patcher
             fileStream.Close();
         }
 
-        public void Load()
+        public void Load(string filePath)
         {
-            var fileStream = File.OpenRead(HeaderTableFilePath);
-            var size = new FileInfo(HeaderTableFilePath).Length;
+            var fileStream = File.OpenRead(filePath);
+            var size = new FileInfo(Constants.HeaderTableFilePath).Length;
             var binaryReader = new BinaryReader(fileStream);
             while (fileStream.Position < size)
             {
@@ -69,7 +75,7 @@ namespace Patcher
 
             int fastCheckSum = 0;
             Queue<byte> byteQueue = new Queue<byte>();
-            for (int j = 0; j < 1024; j++)
+            for (int j = 0; j < Constants.HeaderSize; j++)
             {
                 var b = (byte)stream.ReadByte();
                 byteQueue.Enqueue(b);

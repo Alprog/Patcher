@@ -1,12 +1,12 @@
 ﻿
 namespace Patcher
 {
-    public class ChecksumTable
+    public class HashTable
     {
         public Dictionary<string, string> Hashes = new Dictionary<string, string>();
         public Dictionary<string, string> FileNames = new Dictionary<string, string>();
 
-        public ChecksumTable(string filePath = null)
+        public HashTable(string filePath = null)
         {
             if (filePath != null)
             {
@@ -14,18 +14,17 @@ namespace Patcher
             }
         }
 
-        public static void Create(string folder, string tablePath)
+        public void Collect(string folder)
         {
-            var table = new ChecksumTable();
-            var steamList = FileSystem.ListFiles(folder);
+            var table = new HashTable();
+            var fileNames = FileSystem.ListFiles(folder);
             int i = 0;
-            foreach (var fileName in steamList)
+            foreach (var fileName in fileNames)
             {
                 var hash = FileSystem.CalcMD5(Path.Combine(folder, fileName));
                 table.Add(fileName, hash);
                 Console.WriteLine(i++);
             }
-            table.Save(tablePath);
         }        
 
         public void Add(string path, string hash) 
@@ -57,7 +56,7 @@ namespace Patcher
             }
         }
 
-        public List<string> Check(ChecksumTable patch)
+        public List<string> Check(HashTable patch)
         {
             List<string> sameList = new List<string>();
             Dictionary<string, string> renameList = new Dictionary<string, string>();

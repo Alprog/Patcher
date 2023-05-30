@@ -1,9 +1,9 @@
 ﻿
 namespace Patcher
 {
-    public class MatchBlock
+    public class BlockMatch
     {
-        public MatchBlock(long dstPosition, long srcPosition, long length, string srcFile)
+        public BlockMatch(long dstPosition, long srcPosition, long length, string srcFile)
         {
             this.DstPosition = dstPosition;
             this.SrcPosition = srcPosition;
