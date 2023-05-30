@@ -3,8 +3,10 @@ namespace Patcher
 {
     public class HashTable
     {
-        public Dictionary<string, string> Hashes = new Dictionary<string, string>();
-        public Dictionary<string, string> FileNames = new Dictionary<string, string>();
+        public List<string> FilePathes = new List<string>();
+        public Dictionary<string, string> PathToHashMap = new Dictionary<string, string>();
+        public Dictionary<string, int> PathToIndexMap = new Dictionary<string, int>();
+        public Dictionary<string, string> HashToPathMap = new Dictionary<string, string>();
 
         public HashTable(string filePath = null)
         {
@@ -12,6 +14,11 @@ namespace Patcher
             {
                 Load(filePath);
             }
+        }
+
+        public int ToIndex(string subPath)
+        {
+            return PathToIndexMap[subPath];
         }
 
         public void Collect(string folder)
@@ -27,15 +34,18 @@ namespace Patcher
             }
         }        
 
-        public void Add(string path, string hash) 
+        public void Add(string filePath, string hash) 
         {
-            Hashes.Add(path, hash);
+            FilePathes.Add(filePath);
+            PathToHashMap.Add(filePath, hash);
+            PathToIndexMap.Add(filePath, FilePathes.Count - 1);
+            HashToPathMap.TryAdd(hash, filePath);
         }
 
         public void Save(string table)
         {
             var list = new List<string>(); 
-            foreach (var pair in Hashes)
+            foreach (var pair in PathToHashMap)
             {
                 list.Add(pair.Key);
                 list.Add(pair.Value);                           
@@ -51,28 +61,27 @@ namespace Patcher
                 var path = list[i];
                 var hash = list[i + 1];
 
-                Hashes.Add(path, hash);
-                FileNames.TryAdd(hash, path);
+                Add(path, hash);               
             }
         }
 
-        public List<string> Check(HashTable patch)
+        public List<string> Compare(HashTable patch)
         {
             List<string> sameList = new List<string>();
             Dictionary<string, string> renameList = new Dictionary<string, string>();
             List<string> changeList = new List<string>();
 
-            foreach (var patchPair in patch.Hashes)
+            foreach (var patchPair in patch.PathToHashMap)
             {
                 var newFile = patchPair.Key;
                 var newHash = patchPair.Value;
-                if (newHash == this.Hashes[newFile])
+                if (newHash == this.PathToHashMap[newFile])
                 {
                     sameList.Add(newFile);
                 }
-                else if (this.FileNames.ContainsKey(newHash))
+                else if (this.HashToPathMap.ContainsKey(newHash))
                 {
-                    renameList.Add(this.FileNames[newHash], newFile);
+                    renameList.Add(this.HashToPathMap[newHash], newFile);
                 }
                 else
                 {

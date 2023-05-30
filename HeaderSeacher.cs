@@ -3,8 +3,8 @@ namespace Patcher
 {
     public class HeaderSeacher
     {
-        private FileStream Stream;
-        private long FileSize;
+        public FileStream Stream;
+        public long FileSize;
         public int FastCheckSum;
         private Queue<byte> ByteQueue;
 

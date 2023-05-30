@@ -1,129 +1,160 @@
 ﻿
+using System.Reflection.Metadata;
+
 namespace Patcher
 {
     public class Differ
     {
-        public void CreateDiff(string fullPath, HeaderTable info)
+        private HeaderSeacher Seacher;
+        private string OriginalFolder;
+        private HashTable HashTable;
+        private HeaderTable HeaderTable;
+        private List<HeaderMatch> HeaderMatches;
+        private List<BlockMatch> BlockMatches;
+
+        public Differ(string filePath, string originalFolder, HashTable hashTable, HeaderTable headerTable)
         {
-            var stream = File.OpenRead(fullPath);
-            long size = new FileInfo(fullPath).Length;
+            this.Seacher = new HeaderSeacher(filePath);
+            this.OriginalFolder = originalFolder;
+            this.HashTable = hashTable;
+            this.HeaderTable = headerTable;
+            this.HeaderMatches = new List<HeaderMatch>();
+            this.BlockMatches = new List<BlockMatch>();
+        }
 
-            int fastCheckSum = 0;
-            Queue<byte> byteQueue = new Queue<byte>();
-            for (int j = 0; j < Constants.HeaderSize; j++)
-            {
-                var b = (byte)stream.ReadByte();
-                byteQueue.Enqueue(b);
-                fastCheckSum += b;
-            }
+        public void FullProcess()
+        {
+            FindHeaderMatches();
+            FindBlockMatches();
+            FilterBlockMatches();
+            PrintStatistics();
+        }
 
-            var matches = new List<HeaderMatch>();
-
+        public void FindHeaderMatches()
+        {
             long skipMatchesUntil = 0;
-            while (stream.Position < size)
+            do
             {
-                fastCheckSum -= byteQueue.Dequeue();
-                var b = (byte)stream.ReadByte();
-                fastCheckSum += b;
-                byteQueue.Enqueue(b);
+                if (Seacher.Position % (3 * Constants.MiB) == 0)
+                {
+                    var percent = (float)Seacher.Position / Seacher.FileSize * 100;
+                    Console.WriteLine(Math.Round(percent) + "% (matches: " + HeaderMatches.Count + ")");
+                }
 
-                if (stream.Position < skipMatchesUntil)
+                if (Seacher.Position < skipMatchesUntil)
                 {
                     continue;
                 }
 
-                if (info.Map.TryGetValue(fastCheckSum, out List<Header> list))
+                if (HeaderTable.Map.TryGetValue(Seacher.FastCheckSum, out List<Header> headers))
                 {
-                    var curBytes = byteQueue.ToArray();
-                    foreach (var blockStart in list)
+                    var curBytes = Seacher.GetBytes();
+                    foreach (var header in headers)
                     {
-                        if (curBytes.SequenceEqual(blockStart.Bytes))
+                        if (curBytes.SequenceEqual(header.Bytes))
                         {
-                            matches.Add(new HeaderMatch(stream.Position, blockStart));
-                            skipMatchesUntil = stream.Position + Constants.SkipAfterMatchSize;
+                            HeaderMatches.Add(new HeaderMatch(Seacher.Position, header));
+                            skipMatchesUntil = Seacher.Position + Constants.SkipAfterMatchSize;
                         }
                     }
                 }
             }
+            while (Seacher.MoveNext());
 
-            Console.WriteLine("Matches: " + matches.Count);
+            Console.WriteLine("100% (matches: " + HeaderMatches.Count + ")");
+        }
 
-            var matchBlocks = new List<BlockMatch>();
+        public void FindBlockMatches()
+        {
+            var stream = Seacher.Stream;
 
             long last = 0;
-            foreach (var match in matches)
+            foreach (var match in HeaderMatches)
             {
                 if (match.Position + Constants.DeepSkipSize < last)
                 {
                     continue;
                 }
 
-                stream.Position = match.Position;
+                int matchedLength = Constants.HeaderSize;
+
+                stream.Position = match.Position + matchedLength;
 
                 var otherStream = File.OpenRead(Path.Combine(Constants.OriginalFolder, match.Header.FilePath));
-                otherStream.Position = match.Header.StartPosition;
+                otherStream.Position = match.Header.StartPosition + matchedLength;
 
-                int i = 0;
                 while (stream.ReadByte() == otherStream.ReadByte())
                 {
-                    i++;
-                    if (stream.Position == size)
+                    matchedLength++;
+                    if (stream.Position == Seacher.FileSize)
                     {
                         break;
                     }
                 }
 
-                var dstStartOffset = match.Position - Constants.HeaderSize;
-                var srcStartOffst = match.Header.StartPosition - Constants.HeaderSize;
-                var length = (i + Constants.HeaderSize);
+                var dstStartOffset = match.Position;
+                var srcStartOffst = match.Header.StartPosition;
 
-                var block = new BlockMatch(dstStartOffset, srcStartOffst, length, match.Header.FilePath);
-                last = Math.Max(last, block.DstEndPosition);
-                matchBlocks.Add(block);
+                var blockMatch = new BlockMatch(dstStartOffset, srcStartOffst, matchedLength, match.Header.FilePath);
+                last = Math.Max(last, blockMatch.DstEndPosition);
+                BlockMatches.Add(blockMatch);
 
                 otherStream.Close();
             }
 
-            foreach (var block in matchBlocks)
-            {
-                Console.WriteLine(block.DstPosition + " " + block.Length + " " + block.DstEndPosition + " " + block.SrcFile);
-            }
+            Console.WriteLine("BlockMatches: " + BlockMatches.Count);
+        }
 
-            long last2 = 0;
-            for (int i = 0; i < matchBlocks.Count; i++)
+        public void FilterBlockMatches()
+        {
+            for (int i = 1; i < BlockMatches.Count; i++)
             {
-                var block = matchBlocks[i];
-                if (block.DstEndPosition <= last2)
+                var lastEnd = BlockMatches[i - 1].DstEndPosition;
+
+                var match = BlockMatches[i];
+                if (match.DstEndPosition <= lastEnd)
                 {
-                    matchBlocks.RemoveAt(i--);
+                    // if end position is less or equal than previous => exclude me
+                    // [............)
+                    //       ....)
+                    BlockMatches.RemoveAt(i--);
                     continue;
                 }
 
-                var offset = last2 - block.DstPosition;
-                if (offset > 0)
+                if (match.DstPosition == BlockMatches[i - 1].DstPosition)
                 {
-                    block.SrcPosition += offset;
-                    block.DstPosition += offset;
-                    block.Length += offset;
+                    // if start position is same as previous => exclude previous (we know that our end is bigger)
+                    // [............)
+                    // [...............)
+                    BlockMatches.RemoveAt(--i);
+                    continue;
                 }
 
-                last2 = block.DstEndPosition;
+                var offset = lastEnd - match.DstPosition;
+                if (offset > 0)
+                {
+                    //        if intersection => correct it
+                    // [............)         |     [............)
+                    //       [...........)    |                  [....)   
+                    match.SrcPosition += offset;
+                    match.DstPosition += offset;
+                    match.Length -= offset;
+                }
             }
+            Console.WriteLine("Filtered blockMatches: " + BlockMatches.Count);
+        }
 
-            Console.WriteLine("--------------------------");
-
-            Console.WriteLine(matchBlocks.Count);
-
+        void PrintStatistics()
+        {
             long total = 0;
-            foreach (var block in matchBlocks)
+            foreach (var match in BlockMatches)
             {
-                total += block.Length;
-                Console.WriteLine(block.DstPosition + " " + block.Length + " " + block.DstEndPosition + " " + block.SrcFile);
+                total += match.Length;
+                Console.WriteLine(match.DstPosition + " " + match.Length + " " + match.DstEndPosition + " " + match.SrcFile);
             }
 
             Console.WriteLine(total);
-            Console.WriteLine((float)total / size * 100);
-
+            Console.WriteLine((float)total / Seacher.FileSize * 100);
         }
     }
 }

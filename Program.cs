@@ -6,8 +6,9 @@ namespace Patcher
         static void Main()
         {
             //CreateHashTables();
-            //CheckTables();
-            CreateHeaderTable();
+            //CompareHashTables();
+            //CreateHeaderTable();
+            CreateDiffs();
         }
 
         static void CreateHashTables()
@@ -21,11 +22,11 @@ namespace Patcher
             patchTable.Save(Constants.PatchHashTableFilePath);
         }
 
-        static void CheckTables()
+        static void CompareHashTables()
         {
             var original = new HashTable(Constants.OriginalHashTableFilePath);
             var patch = new HashTable(Constants.PatchHashTableFilePath);
-            original.Check(patch);
+            original.Compare(patch);
         }
 
         static void CreateHeaderTable()
@@ -35,16 +36,16 @@ namespace Patcher
             headerTable.Save(Constants.HeaderTableFilePath);
         }
 
-        static void tt()
+        static void CreateDiffs()
         {
-            //var info = new BlockInfo();
-            //info.Collect(SteamFolder, mb / 16);
-            //info.Save();
+            var fullPath = Path.Combine(Constants.PatchFolder, Constants.SubPath);
+            var hashTable = new HashTable(Constants.OriginalHashTableFilePath);
+            var headerTable = new HeaderTable(Constants.HeaderTableFilePath);
 
-            //var info = new HeaderTable();
-            //info.Load();
+            
+            var differ = new Differ(fullPath, Constants.OriginalFolder, hashTable, headerTable);
+            differ.FullProcess();
 
-            //ProcessFile(Path.Combine(PatchFolder, SubPath), info);
         }
 
     }
