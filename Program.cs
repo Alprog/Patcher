@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace Patcher
 {
     public class Program
@@ -38,14 +40,26 @@ namespace Patcher
 
         static void CreateDiffs()
         {
-            var fullPath = Path.Combine(Constants.PatchFolder, Constants.SubPath);
             var hashTable = new HashTable(Constants.OriginalHashTableFilePath);
             var headerTable = new HeaderTable(Constants.HeaderTableFilePath);
 
-            
-            var differ = new Differ(fullPath, Constants.OriginalFolder, hashTable, headerTable);
-            differ.FullProcess();
+            foreach (var filePath in FileSystem.ListFiles(Constants.PatchFolder))
+            {
+                var fullPath = Path.Combine(Constants.PatchFolder, filePath);
 
+                var size = new FileInfo(fullPath).Length;
+                if (fullPath.Contains("bank"))
+                {
+                    var diffFilePath = Path.Combine(Constants.DiffFolder, filePath);
+                    if (!File.Exists(diffFilePath))
+                    {
+                        Console.WriteLine(filePath);
+                        var differ = new Differ(fullPath, Constants.OriginalFolder, hashTable, headerTable);
+                        differ.FullProcess();
+                        differ.Save(diffFilePath);
+                    }
+                }
+            }
         }
 
     }

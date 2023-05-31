@@ -27,5 +27,15 @@ namespace Patcher
                 }
             }
         }
+
+        public static void CreateFolderForPath(string current)
+        {
+            var parent = Path.GetDirectoryName(current);
+            if (!Directory.Exists(parent))
+            {
+                CreateFolderForPath(parent);
+                Directory.CreateDirectory(parent);
+            }
+        }
     }
 }

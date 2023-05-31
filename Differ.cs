@@ -1,5 +1,6 @@
 ﻿
 using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 
 namespace Patcher
 {
@@ -69,8 +70,14 @@ namespace Patcher
             var stream = Seacher.Stream;
 
             long last = 0;
-            foreach (var match in HeaderMatches)
+            for (int i = 0; i < HeaderMatches.Count; i++)
             {
+                if (i % 200 == 0)
+                {
+                    Console.WriteLine(i + " / " + HeaderMatches.Count);
+                }
+
+                var match = HeaderMatches[i];
                 if (match.Position + Constants.DeepSkipSize < last)
                 {
                     continue;
@@ -155,6 +162,42 @@ namespace Patcher
 
             Console.WriteLine(total);
             Console.WriteLine((float)total / Seacher.FileSize * 100);
+        }
+
+        public byte[] GetBytes(long startPosition, long endPosition)
+        {
+            var length = endPosition - startPosition;
+            var bytes = new byte[length];
+            Seacher.Stream.Position = startPosition;
+            Seacher.Stream.Read(bytes, 0, (int)length);
+            return bytes;
+        }
+
+        public void Save(string fullPath)
+        {
+            FileSystem.CreateFolderForPath(fullPath);
+
+            var diffWriter = new DiffWriter(fullPath, HashTable);
+
+            long processed = 0;
+            foreach (var match in BlockMatches)
+            {
+                if (match.DstPosition > processed)
+                {
+                    var bytes = GetBytes(processed, match.DstPosition);
+                    diffWriter.Write(bytes);
+                    processed += bytes.Length;
+                }
+
+                diffWriter.Write(match);
+                processed += match.Length;
+            }
+
+            if (Seacher.FileSize > processed)
+            {
+                var bytes = GetBytes(processed, Seacher.FileSize);
+                diffWriter.Write(bytes);
+            }
         }
     }
 }
