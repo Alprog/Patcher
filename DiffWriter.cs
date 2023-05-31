@@ -19,17 +19,25 @@ namespace Patcher
             Writer.Write(index);
         }
 
+        public void WriteHeader(string filePath)
+        {
+            Writer.Write((byte)BlockType.NewFile);
+            WriteFileIndex(filePath);
+        }
+
         public void Write(Byte[] bytes)
         {
+            Writer.Write((byte)BlockType.RawBytes);
             Writer.Write(bytes.Length);
             Writer.Write(bytes);
         }
 
         public void Write(BlockMatch blockMatch)
         {
-            Writer.Write(-blockMatch.Length);
-            Writer.Write(blockMatch.SrcPosition);
+            Writer.Write((byte)BlockType.Indirect);
             WriteFileIndex(blockMatch.SrcFile);
+            Writer.Write(blockMatch.SrcPosition);
+            Writer.Write(blockMatch.Length);           
         }
     }
 }

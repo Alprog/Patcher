@@ -23,12 +23,12 @@ namespace Patcher
             this.BlockMatches = new List<BlockMatch>();
         }
 
-        public void FullProcess()
+        public float FullProcess()
         {
             FindHeaderMatches();
             FindBlockMatches();
             FilterBlockMatches();
-            PrintStatistics();
+            return PrintStatistics();
         }
 
         public void FindHeaderMatches()
@@ -151,7 +151,7 @@ namespace Patcher
             Console.WriteLine("Filtered blockMatches: " + BlockMatches.Count);
         }
 
-        void PrintStatistics()
+        float PrintStatistics()
         {
             long total = 0;
             foreach (var match in BlockMatches)
@@ -161,7 +161,9 @@ namespace Patcher
             }
 
             Console.WriteLine(total);
-            Console.WriteLine((float)total / Seacher.FileSize * 100);
+            float percent = (float)total / Seacher.FileSize * 100;
+            Console.WriteLine(percent);
+            return percent;
         }
 
         public byte[] GetBytes(long startPosition, long endPosition)
@@ -173,11 +175,13 @@ namespace Patcher
             return bytes;
         }
 
-        public void Save(string fullPath)
+        public void Save(string filePath, string outputFullPath)
         {
-            FileSystem.CreateFolderForPath(fullPath);
+            FileSystem.CreateFolderForPath(outputFullPath);
 
-            var diffWriter = new DiffWriter(fullPath, HashTable);
+            var diffWriter = new DiffWriter(outputFullPath, HashTable);
+
+            diffWriter.WriteHeader(filePath);
 
             long processed = 0;
             foreach (var match in BlockMatches)
