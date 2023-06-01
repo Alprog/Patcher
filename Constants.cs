@@ -12,6 +12,7 @@ namespace Patcher
 
         public static string HashTableFilePath = "C:/patcher/data/hashTable.txt";
         public static string HeaderTableFilePath = "C:/patcher/data/headerTable.txt";
+        public static string PackFilePath = "C:/patcher/data/pack.txt";
 
         //public static string SubPath = "Encased_Data/StreamingAssets/Master.bank";
         //public static string SubPath = "Encased_Data/StreamingAssets/AssetBundles/misc";

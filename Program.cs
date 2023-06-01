@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.VisualBasic;
 using System;
 
 namespace Patcher
@@ -10,7 +11,9 @@ namespace Patcher
             //CreateHashTables();
             //CreateHeaderTable();
             //CreateDiffs();
-            MakePatch();
+            //CreatePack();
+            //MakePatch();
+            MakePatchFromPack();
         }
 
         static void CreateHashTables()
@@ -90,6 +93,22 @@ namespace Patcher
             }
         }
 
+        static void CreatePack()
+        {
+            var stream = File.OpenWrite(Constants.PackFilePath);
+            var writer = new BinaryWriter(stream);
+
+            var fileNames = FileSystem.ListFiles(Constants.DiffFolder);
+            foreach (var fileName in fileNames)
+            {
+                var fullPath = Path.Combine(Constants.DiffFolder, fileName);
+                var bytes = File.ReadAllBytes(fullPath);
+                writer.Write(bytes);
+            }
+
+            writer.Close();
+        }
+
         static void MakePatch()
         {
             var hashTable = new HashTable(Constants.HashTableFilePath);
@@ -99,13 +118,25 @@ namespace Patcher
             foreach (var fileName in fileNames)
             {
                 var fullName = Path.Combine(Constants.DiffFolder, fileName);
-                //var outputFile = Path.Combine(Constants.OutputFolder, fileName);
-                //if (!File.Exists(outputFile))
-                {
-                    extractor.ProcessFile(fullName);
-                }
+                extractor.ProcessFile(fullName);
             }
         }
 
+        static void MakePatchFromPack()
+        {
+            var defaultPath = Constants.OriginalFolder;
+            Console.WriteLine("Enter encased folder (by default " + defaultPath + "):");
+
+            var path = Console.ReadLine();
+            if (path == string.Empty)
+            {
+                path = defaultPath;
+            }
+            Console.WriteLine("Check folder: " + path);
+
+            //var hashTable = new HashTable("hashTable.txt");
+            //var extractor = new Extractor(hashTable, Constants.OriginalFolder, Constants.OutputFolder);
+            //extractor.ProcessFile(Constants.PackFilePath);
+        }
     }
 }
