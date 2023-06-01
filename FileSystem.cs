@@ -37,5 +37,10 @@ namespace Patcher
                 Directory.CreateDirectory(parent);
             }
         }
+
+        public static long GetFileSize(string filePath)
+        {
+            return new FileInfo(filePath).Length;
+        }
     }
 }

@@ -202,6 +202,8 @@ namespace Patcher
                 var bytes = GetBytes(processed, Seacher.FileSize);
                 diffWriter.Write(bytes);
             }
+
+            diffWriter.Close();
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Patcher
         public HeaderSeacher(string filePath)
         {
             Stream = File.OpenRead(filePath);
-            FileSize = new FileInfo(filePath).Length;
+            FileSize = FileSystem.GetFileSize(filePath);
             FastCheckSum = 0;
             ByteQueue = new Queue<byte>();
 

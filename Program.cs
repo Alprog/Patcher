@@ -49,18 +49,16 @@ namespace Patcher
                 }
 
                 var fullPath = Path.Combine(Constants.PatchFolder, filePath);
-                var size = new FileInfo(fullPath).Length;
-                if (size > Constants.MiB && size < 2 * Constants.MiB)
+                var size = FileSystem.GetFileSize(fullPath);
+                if (size < 15 * Constants.MiB)
                 {
                     var diffFilePath = Path.Combine(Constants.DiffFolder, filePath);
                     if (!File.Exists(diffFilePath))
                     {
                         Console.WriteLine(filePath);
                         var differ = new Differ(fullPath, Constants.OriginalFolder, hashTable, headerTable);
-                        if (differ.FullProcess() > 50)
-                        {
-                            differ.Save(filePath, diffFilePath);
-                        }
+                        differ.FullProcess();
+                        differ.Save(filePath, diffFilePath);
                     }
                 }
             }
@@ -68,9 +66,19 @@ namespace Patcher
 
         static void MakePatch()
         {
-            var diffFile = Path.Combine(Constants.PatchFolder, Constants.SubPath);
-            var outputFile = Path.Combine(Constants.OutputFolder, Constants.SubPath);
-            
+            var hashTable = new HashTable(Constants.HashTableFilePath);
+            var extractor = new Extractor(hashTable, Constants.OriginalFolder, Constants.OutputFolder);
+
+            var fileNames = FileSystem.ListFiles(Constants.DiffFolder);
+            foreach (var fileName in fileNames)
+            {
+                var fullName = Path.Combine(Constants.DiffFolder, fileName);
+                //var outputFile = Path.Combine(Constants.OutputFolder, fileName);
+                //if (!File.Exists(outputFile))
+                {
+                    extractor.ProcessFile(fullName);
+                }
+            }
         }
 
     }

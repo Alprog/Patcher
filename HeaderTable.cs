@@ -34,7 +34,7 @@ namespace Patcher
         public void Load(string filePath)
         {
             var fileStream = File.OpenRead(filePath);
-            var size = new FileInfo(Constants.HeaderTableFilePath).Length;
+            var size = FileSystem.GetFileSize(Constants.HeaderTableFilePath);
             var binaryReader = new BinaryReader(fileStream);
             while (fileStream.Position < size)
             {

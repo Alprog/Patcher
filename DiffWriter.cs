@@ -36,8 +36,13 @@ namespace Patcher
         {
             Writer.Write((byte)BlockType.Indirect);
             WriteFileIndex(blockMatch.SrcFile);
-            Writer.Write(blockMatch.SrcPosition);
-            Writer.Write(blockMatch.Length);           
+            Writer.Write((int)blockMatch.SrcPosition);
+            Writer.Write((int)blockMatch.Length);           
+        }
+
+        public void Close()
+        {
+            Writer.Close();
         }
     }
 }
