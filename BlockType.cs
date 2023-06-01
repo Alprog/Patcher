@@ -5,6 +5,7 @@ namespace Patcher
     {
         NewFile = 0,
         RawBytes = 1,
-        Indirect = 2        
+        Indirect = 2,
+        NewCopyFile = 3
     }
 }

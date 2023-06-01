@@ -1,4 +1,6 @@
 ﻿
+using System.IO;
+
 namespace Patcher
 {
     public class Extractor
@@ -40,6 +42,10 @@ namespace Patcher
                     case BlockType.Indirect:
                         ProcessIndirect(reader);
                         break;
+
+                    case BlockType.NewCopyFile:
+                        ProcessNewCopyFile(reader);
+                        break;
                 }
 
             }
@@ -50,10 +56,13 @@ namespace Patcher
 
         public void EndWriting()
         {
-            if (Writer != null)
+            if (WritingDesc != null)
             {
-                Writer.Close();
-                Writer = null;
+                if (Writer != null)
+                {
+                    Writer.Close();
+                    Writer = null;
+                }
 
                 var fullPath = Path.Combine(OutputFolder, WritingDesc.Path);
                 var generatedHash = FileSystem.CalcMD5(fullPath);
@@ -67,6 +76,8 @@ namespace Patcher
                 {
                     Console.WriteLine("  ERROR! Hash is not the same!");
                 }
+
+                WritingDesc = null;
             }
         }
 
@@ -80,6 +91,23 @@ namespace Patcher
             FileSystem.CreateFolderForPath(fullPath);
             var stream = File.OpenWrite(fullPath);
             Writer = new BinaryWriter(stream);
+
+            Console.Write(WritingDesc.Path + "...");
+        }
+
+        void ProcessNewCopyFile(BinaryReader reader)
+        {
+            EndWriting();
+
+            var dstFileIndex = reader.ReadInt16();
+            var srcFileIndex = reader.ReadInt16();
+            var dstDesc = HashTable.FromIndex(dstFileIndex);
+            var srcDesc = HashTable.FromIndex(srcFileIndex);
+            WritingDesc = dstDesc;
+            var dstPath = Path.Combine(OutputFolder, dstDesc.Path);
+            var srcPath = Path.Combine(OriginalFolder, srcDesc.Path);
+            FileSystem.CreateFolderForPath(dstPath);
+            File.Copy(srcPath, dstPath, true);
 
             Console.Write(WritingDesc.Path + "...");
         }
