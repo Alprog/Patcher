@@ -14,6 +14,8 @@ namespace Patcher
             //CreatePack();
             //MakePatch();
             MakePatchFromPack();
+
+            Console.ReadLine();
         }
 
         static void CreateHashTables()
@@ -39,7 +41,7 @@ namespace Patcher
             long total = 0;
             long processed = 0;
             var LastFiles = new List<string>();
-            
+
             foreach (var filePath in FileSystem.ListFiles(Constants.PatchFolder))
             {
                 var desc = hashTable.FromFilePath(filePath);
@@ -81,7 +83,7 @@ namespace Patcher
 
             Console.WriteLine("Last files:" + LastFiles.Count);
             Console.WriteLine("Last bytes:" + (total - processed) + "(" + total + ")");
-            
+
             foreach (var filePath in LastFiles)
             {
                 var fullPath = Path.Combine(Constants.PatchFolder, filePath);
@@ -122,21 +124,117 @@ namespace Patcher
             }
         }
 
+        static bool CheckIfExist(string fileName)
+        {
+            if (!File.Exists(fileName))
+            {
+                Console.WriteLine(string.Format("Can't find {0}. It should be in the same folder as *.exe file", fileName));
+                return false;
+            }
+            return true;
+        }
+
         static void MakePatchFromPack()
         {
+            //Directory.SetCurrentDirectory("C:\\patcher\\data");
+
             var defaultPath = Constants.OriginalFolder;
-            Console.WriteLine("Enter encased folder (by default " + defaultPath + "):");
+            Console.WriteLine("Encased RPG Patch 1.4");
 
-            var path = Console.ReadLine();
-            if (path == string.Empty)
+            var hasTableName = "hashTable.txt";
+            var packFileName = "pack.bin";
+            if (!CheckIfExist(hasTableName) || !CheckIfExist(packFileName))
             {
-                path = defaultPath;
+                return;
             }
-            Console.WriteLine("Check folder: " + path);
 
-            //var hashTable = new HashTable("hashTable.txt");
-            //var extractor = new Extractor(hashTable, Constants.OriginalFolder, Constants.OutputFolder);
-            //extractor.ProcessFile(Constants.PackFilePath);
+            var hashTable = new HashTable("hashTable.txt");
+
+            Console.WriteLine("Enter path to Encased 1.3 directory (by default " + defaultPath + "):");
+            Console.Write("> ");
+
+            var steamFolderPath = Console.ReadLine();
+            if (steamFolderPath == string.Empty)
+            {
+                steamFolderPath = defaultPath;
+            }
+
+            var i = 0;
+            foreach (var desc in hashTable.Files)
+            {
+                var percent = Math.Round((float)i++ / hashTable.Files.Count * 100);
+
+                if (desc.OldHash != Constants.NoneHash)
+                {
+                    var fileName = Path.GetFileName(desc.Path);
+                    Console.Write(string.Format("{0}% Calculate checksum of {1}... ", percent, fileName));
+
+                    var fullPath = Path.Combine(steamFolderPath, desc.Path);
+
+                    if (!File.Exists(fullPath))
+                    {
+                        Console.WriteLine("ERROR! No such file");
+                        Console.WriteLine("Failed. Make sure that you set correct 1.3 Encased directory");
+                        return;
+                    }
+
+                    var curHash = FileSystem.CalcMD5(fullPath);
+
+                    if (curHash != desc.OldHash)
+                    {
+                        Console.WriteLine("ERROR! Wrong checksum");
+                        if (curHash == desc.NewHash)
+                        {
+                            Console.WriteLine("Failed. File looks like already patched to 1.4. Make sure that you specify 1.3 Encased directory");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Failed. File looks corrupted. Make sure that you specify 1.3 Encased directory without changes");
+                        }
+                        return;
+                    }
+
+                    Console.WriteLine("done");
+                }
+            }
+
+            var backupFolderPath = steamFolderPath + "_Backup";
+
+            Console.Write("Creating backup... ");
+            try
+            {
+                new DirectoryInfo(steamFolderPath).MoveTo(backupFolderPath);
+                Console.WriteLine("done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Make sure that you close SteamApp and any files in game directory. Try rerun with admin rights");
+                return;
+            }
+
+            var extractor = new Extractor(hashTable, backupFolderPath, steamFolderPath);
+            extractor.ProcessFile(packFileName);
+
+            if (extractor.Errors > 0)
+            {
+                Console.WriteLine(string.Format("Failed. Completed with {0} errors. See log for more info", extractor.Errors));
+                Console.WriteLine(string.Format("You can find backup at {0}", backupFolderPath));
+                return;
+            }
+
+            Console.Write("Deleting backup... ");
+            try
+            {
+                new DirectoryInfo(backupFolderPath).Delete(true);
+                Console.WriteLine("done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            Console.WriteLine("Successfully patched to 1.4! Enjoy!");
         }
     }
 }

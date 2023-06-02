@@ -11,6 +11,7 @@ namespace Patcher
         private BinaryWriter Writer;
         private FileDesc WritingDesc;
         private Stream[] OriginalStreams;
+        public int Errors = 0;
 
         public Extractor(HashTable hashTable, string originalFolder, string outputFolder)
         {
@@ -75,6 +76,7 @@ namespace Patcher
                 else
                 {
                     Console.WriteLine("  ERROR! Hash is not the same!");
+                    Errors++;
                 }
 
                 WritingDesc = null;
@@ -109,7 +111,7 @@ namespace Patcher
             FileSystem.CreateFolderForPath(dstPath);
             File.Copy(srcPath, dstPath, true);
 
-            Console.Write(WritingDesc.Path + "...");
+            Console.Write("Extracting file " + WritingDesc.Path + "...");
         }
 
         void ProcessRawBytes(BinaryReader reader)
