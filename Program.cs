@@ -226,6 +226,7 @@ namespace Patcher
             Console.Write("Deleting backup... ");
             try
             {
+                extractor.CloseAllStream();
                 new DirectoryInfo(backupFolderPath).Delete(true);
                 Console.WriteLine("done");
             }

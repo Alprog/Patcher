@@ -94,7 +94,7 @@ namespace Patcher
             var stream = File.OpenWrite(fullPath);
             Writer = new BinaryWriter(stream);
 
-            Console.Write(WritingDesc.Path + "...");
+            Console.Write("Extracting file " + WritingDesc.Path + "...");
         }
 
         void ProcessNewCopyFile(BinaryReader reader)
@@ -140,10 +140,22 @@ namespace Patcher
         {
             if (OriginalStreams[fileIndex] == null)
             {
-                var filePath = Path.Combine(Constants.OriginalFolder, HashTable.Files[fileIndex].Path);
+                var filePath = Path.Combine(OriginalFolder, HashTable.Files[fileIndex].Path);
                 OriginalStreams[fileIndex] = File.OpenRead(filePath);
             }
             return OriginalStreams[fileIndex];
+        }
+
+        public void CloseAllStream()
+        {
+            foreach (var originalStream in OriginalStreams)
+            {
+                if (originalStream != null)
+                {
+                    originalStream.Close();
+                }
+            }
+            this.OriginalStreams = null;
         }
     }
 }
